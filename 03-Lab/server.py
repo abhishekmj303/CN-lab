@@ -1,13 +1,33 @@
 import socket
 import threading
+from collections import namedtuple
 
 # IP = socket.gethostbyname(socket.gethostname())
 IP = ''
-PORT = 53536
+PORT = 5353
 ADDR = (IP, PORT)
 SIZE = 1024
 FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "QUIT!"
+
+clients = []
+Client = namedtuple("Client", ["conn", "addr"])
+
+def find_client(addr):
+    for client in clients:
+        if client.addr == addr:
+            return client
+    return None
+
+def send_msg(msg, addr):
+    client = find_client(addr)
+    if client is None:
+        return False
+    try:
+        client.conn.send(msg.encode(FORMAT))
+        return True
+    except BrokenPipeError:
+        return False
 
 def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected.")
@@ -23,6 +43,13 @@ def handle_client(conn, addr):
             conn.send("Msg received".encode(FORMAT))
         except BrokenPipeError:
             connected = False
+
+        addr_input = input("Send msg to (ip port): ")
+        addr_input = (addr_input.split()[0], int(addr_input.split()[1]))
+        msg_input = input("Message: ")
+        if not send_msg(msg_input, addr_input):
+            print(f"[ERROR] Cannot send message to {addr_input}")
+
     
     print(f"[DISCONNECT CONNECTION] {addr} disconnected.")
     print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
@@ -42,6 +69,7 @@ def main():
     
     while True:
         conn, addr = server.accept()
+        clients.append(Client(conn, addr))
 
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
