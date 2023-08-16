@@ -4,18 +4,23 @@ import sys
 import os
 # to url_encode and decode
 import urllib.parse
-from collections import namedtuple
+from dataclasses import dataclass
 
 # IP = socket.gethostbyname(socket.gethostname())
 IP = ''
-PORT = 53535
+PORT = 53533
 ADDR = (IP, PORT)
 SIZE = 1024
 FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "QUIT!"
 
 clients = []
-Client = namedtuple("Client", ["conn", "addr", "ok"])
+
+@dataclass
+class Client:
+    conn: socket.socket
+    addr: str
+    ok: bool
 
 
 class MsgNotDelivered(Exception):
@@ -43,13 +48,15 @@ def server_send(from_msg, from_client):
         to_addr, msg = from_msg.strip().split("/")
         msg = urllib.parse.unquote(msg)
     except ValueError:
-        raise MsgNotDelivered("Invalid message format.")
+        raise MsgNotDelivered(f"Invalid message format: {from_msg}")
     
     # If acknoledgement is recieved
     if to_addr == "SERVER":
         to_addr = msg # msg sent is the address of another client
         msg = "Delivered"
+        from_client = Client(None, "SERVER", True)
     else: # If message is to be sent
+        print(f"[SENDING] SERVER -> {from_client.addr}: Recieved")
         from_client.conn.send(msg_encode("Recieved"))
 
     to_client = find_client(to_addr)
@@ -66,7 +73,10 @@ def server_send(from_msg, from_client):
 
 def server_broadcast(msg):
     for client in clients:
-        client.conn.send(msg_encode(msg))
+        try:
+            client.conn.send(msg_encode(msg))
+        except BrokenPipeError:
+            disconnect_client(client)
 
 
 def disconnect_client(client):
@@ -74,6 +84,8 @@ def disconnect_client(client):
 
     print(f"[DISCONNECT CLIENT] {client.addr} disconnected.")
     print(f"[ACTIVE CLIENTS] {threading.active_count() - 2}")
+
+    server_broadcast(f"{client.addr}-")
 
     clients.remove(client)
     client.conn.close()
@@ -84,11 +96,17 @@ def handle_client(client):
     conn = client.conn
     print(f"[NEW CLIENT] {addr} connected.")
 
+    for c in clients:
+        if c.addr != addr:
+            conn.send(msg_encode(f"{c.addr}+"))
+
     while client.ok:
         from_msg = conn.recv(SIZE).decode(FORMAT)
         if from_msg == DISCONNECT_MESSAGE:
             client.ok = False
             break
+        elif not from_msg:
+            continue
         
         try:
             server_send(from_msg, client)
@@ -118,12 +136,16 @@ def main():
         current_client = Client(conn, addr, True)
         clients.append(current_client)
 
-        server_broadcast(current_client.addr)
+        server_broadcast(f"{current_client.addr}+")
 
-        thread = threading.Thread(target=handle_client, args=(current_client))
+        thread = threading.Thread(target=handle_client, args=(current_client,))
         thread.start()
         
         print(f"[ACTIVE CLIENTS] {threading.active_count() - 1}")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("[EXITING] Server is exiting...")
+        os._exit(0)
