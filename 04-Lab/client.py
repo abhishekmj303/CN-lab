@@ -1,6 +1,7 @@
 import socket
 import threading
 import os
+import readline
 # to url_encode and decode
 import urllib.parse
 from collections import namedtuple
@@ -17,9 +18,9 @@ DISCONNECT_MESSAGE = "QUIT!"
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-clients = set()
+clients = []
 
-current_input = None
+current_input = ""
 
 
 class MsgNotRecieved(Exception):
@@ -27,18 +28,19 @@ class MsgNotRecieved(Exception):
 
 
 def print_msg(msg):
-    if current_input is None:
+    if not current_input:
         print(msg)
     else:
-        print(f"\r{msg}\n{current_input}", end="", flush=True)
+        input_buffer = readline.get_line_buffer()
+        print(f"\r{msg}\n{current_input}{input_buffer}", end="", flush=True)
 
 
 def input_msg(string):
     global current_input
 
     current_input = string
-    result = input(string)
-    current_input = None
+    result = input(f"\r{string}")
+    current_input = ""
 
     return result
 
@@ -62,10 +64,10 @@ def handle_msg(from_msg, client):
     # Check if broadcast
     if from_addr == "SERVER":
         if msg[-1] == "+":
-            clients.add(msg[:-1])
+            clients.append(msg[:-1])
             print_msg(f"[CLIENT ONLINE] {msg[:-1]} connected.")
         elif msg[-1] == "-":
-            clients.discard(msg[:-1])
+            clients.remove(msg[:-1])
             print_msg(f"[CLIENT OFFLINE] {msg[:-1]} disconnected.")
         else:
             print_msg(f"[SERVER] {msg}")

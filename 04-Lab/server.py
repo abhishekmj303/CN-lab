@@ -1,6 +1,6 @@
 import socket
 import threading
-import sys
+import time
 import os
 # to url_encode and decode
 import urllib.parse
@@ -35,6 +35,7 @@ def find_client(addr):
 
 
 def msg_encode(msg, from_client=None):
+    # MSG FORMAT: <to_addr>/<msg>
     msg = urllib.parse.quote(msg)
     if from_client is None:
         to_msg = f"SERVER/{msg}"
@@ -99,6 +100,7 @@ def handle_client(client):
     for c in clients:
         if c.addr != addr:
             conn.send(msg_encode(f"{c.addr}+"))
+            time.sleep(0.2)
 
     while client.ok:
         from_msg = conn.recv(SIZE).decode(FORMAT)
