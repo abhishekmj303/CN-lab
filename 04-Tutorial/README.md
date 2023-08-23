@@ -10,9 +10,9 @@ geometry: "margin=2.5cm"
 
 Logical split of same network into different VLANs:
 
-- All PCs are connected to the same VLAN with number *100*
-- All Laptops are connected to the same VLAN with number *200*
-- All Servers are connected to the same VLAN with number *300*
+- All ***CS*** are connected to the same VLAN with number *100*
+- All ***AI*** are connected to the same VLAN with number *200*
+- All ***TA*** are connected to the same VLAN with number *300*
 
 
 ![Network Diagram](img/conn.png)
