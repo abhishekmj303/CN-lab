@@ -1,3 +1,6 @@
+# Abhishek M J - CS21B2018
+# client.py
+
 import socket
 import threading
 import os
@@ -7,47 +10,55 @@ import time
 import urllib.parse
 
 IP = socket.gethostbyname(socket.gethostname())
-# IP = "172.16.19.141"
 # IP = ''
 PORT = 53533
-# PORT = 8006
 ADDR = (IP, PORT)
 SIZE = 1024
 FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "QUIT!"
 
+# create client socket
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 folder_path = "client/" # folder to store files for client
 
-clients = []
-
-current_input = ""
+clients = [] # list of clients connected to the server
 
 
-class MsgNotRecieved(Exception):
+class FileNotSent(Exception):
+    '''Exception raised when file is not sent'''
     pass
 
 
-def print_msg(msg):
-    if not current_input:
+current_prompt = "" # current input prompt
+
+
+def print_msg(msg: str):
+    '''Print message without overwriting current input prompt'''
+    if not current_prompt:
         print(msg)
     else:
         input_buffer = readline.get_line_buffer()
-        print(f"\r{msg}\n{current_input}{input_buffer}", end="", flush=True)
+        print(f"\r{msg}\n{current_prompt}{input_buffer}", end="", flush=True)
 
 
-def input_msg(string):
-    global current_input
+def input_msg(string: str):
+    '''Same as input() but stores current input prompt while taking input'''
+    global current_prompt
 
-    current_input = string
+    current_prompt = string
     result = input(f"\r{string}")
-    current_input = ""
+    current_prompt = ""
 
     return result
 
 
-def msg_encode(msg, to_addr=None):
+def msg_encode(msg: str, to_addr: str = None) -> bytes:
+    '''
+    Encode message to be sent to client:
+
+    MSG FORMAT: <to_addr>/<msg>
+    '''
     msg = urllib.parse.quote(msg)
     if to_addr is None:
         to_msg = f"SERVER/{msg}"
@@ -56,10 +67,15 @@ def msg_encode(msg, to_addr=None):
     return to_msg.encode(FORMAT)
 
 
-def send_file(client, to_addr, file_name):
-    file_path = file_name
+def send_file(client: socket.socket, to_addr: str, file_path: str):
+    '''
+    Send file to another client through server:
+    1. Send file name to to_client: <to_addr>/<file_name>
+    2. Send file data in raw bytes
+    3. Send EOF to indicate end of file
+    '''
     if not os.path.exists(file_path):
-        print_msg(f"[ERROR] File '{file_name}' not found.")
+        print_msg(f"[ERROR] File '{file_path}' not found.")
         return
     
     client.send(msg_encode(os.path.basename(file_path), to_addr))
@@ -74,7 +90,13 @@ def send_file(client, to_addr, file_name):
         client.send(b"EOF")
 
 
-def recieve_file(client, file_name):
+def recieve_file(client: socket.socket, file_name: str):
+    '''
+    Recieve file from another client through server:
+    1. Recieve file data in raw bytes
+    2. Write file data to file
+    3. Recieve EOF to indicate end of file
+    '''
     file_path = folder_path + file_name
     with open(file_path, "wb") as f:
         bin_data = client.recv(SIZE)
@@ -83,17 +105,24 @@ def recieve_file(client, file_name):
             bin_data = client.recv(SIZE)
 
 
-def handle_msg(from_msg, client):
+def handle_msg(from_msg: str, client: socket.socket):
+    '''
+    Handle message recieved from server:
+    1. File transfer: <from_addr>/<file_name>
+    2. Acknowledgement: SERVER/<from_addr>
+    3. Client online: SERVER/<client_addr>+
+    4. Client offline: SERVER/<client_addr>-
+    '''
     try:
         from_addr, msg = from_msg.strip().split("/")
         msg = urllib.parse.unquote(msg)
     except ValueError:
-        raise MsgNotRecieved(f"Invalid message format: {from_msg}")
+        raise FileNotSent(f"Invalid message format: {from_msg}")
     
     # Check if broadcast
     if from_addr == "SERVER":
-        if msg[-1] == "+":
-            if len(clients) == 0:
+        if msg[-1] == "+": # if client online
+            if len(clients) == 0: # first client is current client
                 print_msg(f"[CURRENT CLIENT] {msg[:-1]}")
                 global folder_path
                 folder_path = msg[:-1] + "/"
@@ -102,29 +131,37 @@ def handle_msg(from_msg, client):
             else:
                 print_msg(f"[CLIENT ONLINE] {msg[:-1]} connected.")
             clients.append(msg[:-1])
-        elif msg[-1] == "-":
+        elif msg[-1] == "-": # if client offline
             clients.remove(msg[:-1])
             print_msg(f"[CLIENT OFFLINE] {msg[:-1]} disconnected.")
-        else:
+        else: # if acknowledgement
             print_msg(f"[SERVER] {msg}")
-    else:
+    else: # if file transfer
         print_msg(f"[{from_addr}] {msg}")
         recieve_file(client, msg)
         # send acknowledgement
         client.send(msg_encode(from_addr))
 
 
-def disconnect_server(client, by):
+def disconnect_server(client: socket.socket, recv_from: str):
+    '''
+    Disconnect from server, received from "client" or "server":
+    '''
     client.send(DISCONNECT_MESSAGE.encode(FORMAT))
-    if by == "client":
+    if recv_from == "client":
         print_msg(f"[DISCONNECTED] Client disconnected from {IP}:{PORT}")
-    elif by == "server":
+    elif recv_from == "server":
         print_msg(f"[DISCONNECTED] Server disconnected from Client.")
     client.close()
     os._exit(0)
 
 
 def handle_server(client: socket.socket):
+    '''
+    Handle server:
+    1. Recieve message from server
+    2. Handle message
+    '''
     connected = True
     while connected:
         try:
@@ -137,7 +174,7 @@ def handle_server(client: socket.socket):
 
         try:
             handle_msg(msg, client)
-        except MsgNotRecieved as e:
+        except FileNotSent as e:
             print_msg(f"[ERROR] {e}")
 
     try:
@@ -147,22 +184,24 @@ def handle_server(client: socket.socket):
 
 
 def main():
+    # connect to server
     global client
     client.connect(ADDR)
     print_msg(f"[CONNECTED] Client connected to {IP}:{PORT}")
 
+    # start server thread to handle messages from server
     server_thread = threading.Thread(target=handle_server, args=(client,))
     server_thread.start()
 
     connected = True
-    while connected:
-        to_addr = input_msg("(ip:port)> ").strip()
+    while connected: # send file to other clients
+        to_addr = input_msg("(ip:port)> ").strip() # get client address
 
         if to_addr == DISCONNECT_MESSAGE:
             connected = False
-            disconnect_server(client)
+            disconnect_server(client, "client")
 
-        elif to_addr.lower() in ["", "l", "list"]:
+        elif to_addr.lower() in ["", "l", "list"]: # list all clients
             print_msg(f"[ONLINE CLIENT LIST] {len(clients)} clients connected.")
             print_msg(f"[CURRENT CLIENT] {clients[0]}")
             for c in clients[1:]:
@@ -173,13 +212,13 @@ def main():
             print_msg(f"[ERROR] Client '{to_addr}' not found.")
             continue
 
-        file_name = input_msg("(file)> ").strip()
-        send_file(client, to_addr, file_name)
+        file_path = input_msg("(file)> ").strip() # get file path
+        send_file(client, to_addr, file_path)
 
     disconnect_server(client, "client")
 
 if __name__ == "__main__":
     try:
         main()
-    except KeyboardInterrupt:
+    except KeyboardInterrupt: # handle keyboard interrupt
         disconnect_server(client, "client")
