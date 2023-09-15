@@ -2,3 +2,5 @@
 /05-Lab/client/*
 /05-Lab/server/*
 /06-Lab/*:*/*
+.venv
+__pycache__
