@@ -157,11 +157,11 @@ def drawpaddle(screen, x, y, w, h, color=WHITE):
 def drawball(screen, x, y, bw):
     pygame.draw.circle(screen, WHITE, (int(x), int(y)), int(bw))
 
-''' 
-Updates Player Locations
-''' 
-def uploc(): 
 
+def uploc(): 
+    ''' 
+    Updates Player Locations
+    ''' 
     global gs
 
     if w_p:
@@ -209,12 +209,29 @@ def uploc():
             else:
                 gs.p4x += gs.dmW
 
- 
-''' 
-Updates Ball And Game Scores
-''' 
-def upblnv():
 
+def upscr():
+    '''
+    Updates Score
+    '''
+    global gs
+    if gs.ball_thrower == 1:
+        gs.p1score += 1
+    elif gs.ball_thrower == 2:
+        gs.p2score += 1
+    elif gs.FourPlayers:
+        if gs.ball_thrower == 3:
+            gs.p3score += 1
+        elif gs.ball_thrower == 4:
+            gs.p4score += 1
+
+    gs.ball_thrower = 0 #Set Ball thrower 0 to be fair, when the corresponding player throws then begin to score it.
+ 
+
+def upblnv():
+    ''' 
+    Updates Ball
+    ''' 
     # global gs.ball_thrower
 
     # global gs.bx
@@ -234,30 +251,6 @@ def upblnv():
     '''
     Updates score according to the last ball thrower
     '''
-    if gs.FourPlayers:
-        def update_score(p1score, p2score,p3score,p4score,ball_thrower): 
-            if ball_thrower == 1:
-                p1score += 1
-            elif ball_thrower == 2:
-                p2score += 1
-            elif ball_thrower == 3:
-                p3score += 1
-            elif ball_thrower == 4:
-                p4score += 1
-
-            ball_thrower = 0 #Set Ball thrower 0 to be fair, when the corresponding player throws then begin to score it.
-
-            return p1score,p2score,p3score,p4score,ball_thrower
-    else:
-        def update_score(p1score, p2score,ball_thrower): 
-            if ball_thrower == 1:
-                p1score += 1
-            elif ball_thrower == 2:
-                p2score += 1            
-
-            ball_thrower = 0 #Set Ball thrower 0 to be fair, when the corresponding player throws then begin to score it.
-
-            return p1score,p2score,ball_thrower
     
     if (gs.bx+gs.bxv < gs.p1x+gs.paddle_width_v) and ((gs.p1y < gs.by+gs.byv+gs.bw) and (gs.by+gs.byv-gs.bw < gs.p1y+gs.paddle_height_v)):
         gs.bxv = -gs.bxv
@@ -265,11 +258,7 @@ def upblnv():
         gs.byv = -gs.byv/((5*gs.bw)/7)
         gs.ball_thrower = 1
     elif gs.bx+gs.bxv < 0:
-        if gs.FourPlayers:
-            gs.p1score,gs.p2score,gs.p3score,gs.p4score,gs.ball_thrower = update_score(gs.p1score,gs.p2score,gs.p3score,gs.p4score,gs.ball_thrower)
-        else:
-            gs.p1score,gs.p2score,gs.ball_thrower = update_score(gs.p1score,gs.p2score,gs.ball_thrower)
-
+        upscr()
         gs.bx = gs.W/2
         gs.bxv = gs.H/gs.velocity_raito
         gs.by = gs.H/2
@@ -281,10 +270,7 @@ def upblnv():
         gs.byv = -gs.byv/((5*gs.bw)/7)
         gs.ball_thrower = 2
     elif gs.bx+gs.bxv > gs.W:
-        if gs.FourPlayers:
-            gs.p1score,gs.p2score,gs.p3score,gs.p4score,gs.ball_thrower = update_score(gs.p1score,gs.p2score,gs.p3score,gs.p4score,gs.ball_thrower)
-        else:
-            gs.p1score,gs.p2score,gs.ball_thrower = update_score(gs.p1score,gs.p2score,gs.ball_thrower)
+        upscr()
         gs.bx = gs.W/2
         gs.bxv = -gs.H/gs.velocity_raito
         gs.by = gs.H/2
@@ -298,7 +284,7 @@ def upblnv():
             gs.bxv = -gs.bxv/((5*gs.bw)/7)
             gs.ball_thrower = 3
         elif gs.by+gs.byv < 0:
-            gs.p1score,gs.p2score,gs.p3score,gs.p4score,gs.ball_thrower = update_score(gs.p1score,gs.p2score,gs.p3score,gs.p4score,gs.ball_thrower)
+            upscr()
             gs.by = gs.H/2
             gs.byv = gs.W/gs.velocity_raito
             gs.bx = gs.W/2
@@ -310,7 +296,7 @@ def upblnv():
             gs.bxv = -gs.bxv/((5*gs.bw)/7)
             gs.ball_thrower = 4
         elif gs.by+gs.byv > gs.H:
-            gs.p1score,gs.p2score,gs.p3score,gs.p4score,gs.ball_thrower = update_score(gs.p1score,gs.p2score,gs.p3score,gs.p4score,gs.ball_thrower)
+            upscr()
             gs.by = gs.H/2
             gs.byv = -gs.W/gs.velocity_raito
             gs.bx = gs.W/2
@@ -322,7 +308,7 @@ def upblnv():
     gs.bx += gs.bxv
     gs.by += gs.byv
 
-def drawscore(screen, font, H, FourPlayers):
+def drawscore(screen, font, H, FourPlayers, gs):
     screen.blit(font.render("Score", False, WHITE), (30,30))
     
     screen.blit(font.render(f"{gs.p1score}",False,py1_Color),(H/5,30))
@@ -396,6 +382,9 @@ def game_loop():
                             right_p = False
                             lrr = True
 
+                # uploc()
+                # upblnv()
+
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_w:
                     w_p = False
@@ -444,7 +433,7 @@ def game_loop():
         screen.fill(BLACK)
         uploc()
         upblnv()
-        drawscore(screen, font, gs.H, gs.FourPlayers)
+        drawscore(screen, font, gs.H, gs.FourPlayers, gs)
         drawball(screen, gs.bx, gs.by, gs.bw)
 
         drawpaddle(screen, gs.p1x, gs.p1y, gs.paddle_width_v, gs.paddle_height_v, py1_Color) 
@@ -456,6 +445,7 @@ def game_loop():
 
         pygame.display.flip()
         pygame.time.wait(wt)
+        # print("gameloop p1score: ", gs.p1score)
     
     os._exit(0)
 

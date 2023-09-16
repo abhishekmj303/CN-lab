@@ -44,7 +44,8 @@ def disconnect_client(client: Client):
 
 
 def handle_msg(client: Client, msg: str):
-    if msg == "GET":
+    print(f"[{client.addr}] {msg}")
+    if "GET" in msg:
         client.conn.send(gs.toJSON().encode(FORMAT))
     else:
         key, press = msg.split(":")
@@ -91,7 +92,9 @@ def handle_client(client: Client):
             continue
 
         try: # handle recieved message
-            handle_msg(client, from_msg)
+            while ";" in from_msg:
+                msg, from_msg = from_msg.split(";", 1)
+                handle_msg(client, msg)
         except Exception as e:
             print(f"[ERROR] {e}")
 
