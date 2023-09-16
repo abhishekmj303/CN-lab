@@ -1,6 +1,7 @@
 import socket
 import threading
 import os
+import time
 
 import pygame
 from pong4 import *
@@ -29,33 +30,33 @@ def disconnect_server(client: socket.socket, recv_from: str):
 
 def update_loop():
     global gs
-    while True:
-        try:
-            client.send("GET".encode(FORMAT))
+    # while True:
+    try:
+        client.send("GET".encode(FORMAT))
 
-            msg = client.recv(SIZE).decode(FORMAT)
-            if msg == DISCONNECT_MESSAGE:
-                disconnect_server(client, "server")
+        msg = client.recv(SIZE).decode(FORMAT)
+        if msg == DISCONNECT_MESSAGE:
+            disconnect_server(client, "server")
 
-            gs = GameState.from_json(msg)
-        except BrokenPipeError:
-            print(f"[EXCEPTION] Broken pipe error: Server not connected")
-            os._exit(0)
+        gs = GameState.from_json(msg)
+    except BrokenPipeError:
+        print(f"[EXCEPTION] Broken pipe error: Server not connected")
+        os._exit(0)
 
-        screen.fill(BLACK)
+    screen.fill(BLACK)
 
-        drawscore(screen, font, gs.H, gs.FourPlayers)
-        drawball(screen, gs.bx, gs.by, gs.bw)
+    drawscore(screen, font, gs.H, gs.FourPlayers)
+    drawball(screen, gs.bx, gs.by, gs.bw)
 
-        drawpaddle(screen,gs.p1x, gs.p1y, gs.paddle_width_v, gs.paddle_height_v, py1_Color) 
-        drawpaddle(screen,gs.p2x, gs.p2y, gs.paddle_width_v, gs.paddle_height_v, py2_Color)
+    drawpaddle(screen,gs.p1x, gs.p1y, gs.paddle_width_v, gs.paddle_height_v, py1_Color) 
+    drawpaddle(screen,gs.p2x, gs.p2y, gs.paddle_width_v, gs.paddle_height_v, py2_Color)
 
-        if gs.FourPlayers:
-            drawpaddle(screen,gs.p3x, gs.p3y, gs.paddle_width_h, gs.paddle_height_h, py3_Color)
-            drawpaddle(screen,gs.p4x, gs.p4y, gs.paddle_width_h, gs.paddle_height_h, py4_Color)
-        
-        pygame.display.flip()
-        pygame.time.wait(wt)
+    if gs.FourPlayers:
+        drawpaddle(screen,gs.p3x, gs.p3y, gs.paddle_width_h, gs.paddle_height_h, py3_Color)
+        drawpaddle(screen,gs.p4x, gs.p4y, gs.paddle_width_h, gs.paddle_height_h, py4_Color)
+    
+    pygame.display.flip()
+    # pygame.time.wait(wt)
 
 
 def game_loop():
@@ -73,6 +74,7 @@ def game_loop():
     }
 
     while True:
+        update_loop()
         try:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -101,14 +103,16 @@ def main():
     player = int(client.recv(SIZE).decode(FORMAT))
     print(f"[PLAYER] Player {player}")
 
-    game_thread = threading.Thread(target=game_loop)
-    game_thread.start()
+    # game_thread = threading.Thread(target=game_loop)
+    # game_thread.start()
 
-    update_thread = threading.Thread(target=update_loop)
-    update_thread.start()
+    # update_thread = threading.Thread(target=update_loop)
+    # update_thread.start()
 
-    game_thread.join()
-    update_thread.join()
+    # game_thread.join()
+    # update_thread.join()
+
+    game_loop()
 
     disconnect_server(client, "client")
 
