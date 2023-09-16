@@ -6,8 +6,8 @@ import pygame
 from pong4 import *
 
 IP = socket.gethostbyname(socket.gethostname())
-# IP = ''
-PORT = 53533
+# IP = '192.168.2.24'
+PORT = 53535
 ADDR = (IP, PORT)
 SIZE = 4096
 FORMAT = "utf-8"
@@ -15,6 +15,7 @@ DISCONNECT_MESSAGE = "QUIT!"
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 player = 0
+pl = {1: "Left", 2: "Right", 3: "Top", 4: "Bottom"}
 
 
 def disconnect_server(client: socket.socket, recv_from: str):
@@ -38,12 +39,17 @@ def update_loop():
                 disconnect_server(client, "server")
 
             gs = GameState.from_json(msg)
-        except BrokenPipeError:
-            print(f"[EXCEPTION] Broken pipe error: Server not connected")
+        except (BrokenPipeError, ConnectionResetError):
+            print(f"[EXCEPTION] Connection error: Server not connected")
             os._exit(0)
+        except json.decoder.JSONDecodeError:
+            print("[EXCEPTION] JSON Decode Error")
+            continue
 
         screen.fill(BLACK)
 
+        tag_pos = 50 if gs.FourPlayers else 5
+        screen.blit(font.render(f"{pl[player]} Player", True, WHITE), (gs.W//2-65,tag_pos))
         drawscore(screen, font, gs.H, gs.FourPlayers, gs)
         drawball(screen, gs.bx, gs.by, gs.bw)
 
@@ -55,7 +61,7 @@ def update_loop():
             drawpaddle(screen,gs.p4x, gs.p4y, gs.paddle_width_h, gs.paddle_height_h, py4_Color)
         
         pygame.display.flip()
-        pygame.time.wait(wt)
+        # pygame.time.wait(wt)
 
 
 def game_loop():
@@ -88,7 +94,7 @@ def game_loop():
         except BrokenPipeError:
             print(f"[EXCEPTION] Broken pipe error: Server not connected")
             os._exit(0)
-        pygame.time.wait(wt)
+        # pygame.time.wait(wt)
 
 
 def main():
@@ -98,17 +104,18 @@ def main():
     client.connect(ADDR)
     print(f"[CONNECTED] Client connected to {IP}:{PORT}")
 
-    player = int(client.recv(SIZE).decode(FORMAT))
+    msg = client.recv(SIZE).decode(FORMAT)
+    if msg == DISCONNECT_MESSAGE:
+        print(f"Game is full.")
+        disconnect_server(client, "server")
+    
+    player = int(msg)
     print(f"[PLAYER] Player {player}")
-
-    game_thread = threading.Thread(target=game_loop)
-    game_thread.start()
 
     update_thread = threading.Thread(target=update_loop)
     update_thread.start()
 
-    game_thread.join()
-    update_thread.join()
+    game_loop()
 
     disconnect_server(client, "client")
 
@@ -118,3 +125,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("[EXCEPTION] Keyboard Interrupt.")
         disconnect_server(client, "client")
+    except ConnectionRefusedError:
+        print(f"[EXCEPTION] Connection Refused: Server not connected.")
+        os._exit(0)

@@ -212,7 +212,7 @@ def uploc():
 
 def upscr():
     '''
-    Updates Score
+    Updates Score according to the last ball thrower
     '''
     global gs
     if gs.ball_thrower == 1:
@@ -232,25 +232,7 @@ def upblnv():
     ''' 
     Updates Ball
     ''' 
-    # global gs.ball_thrower
-
-    # global gs.bx
-    # global gs.bxv
-    # global gs.by
-    # global gs.byv
-
-    # if gs.FourPlayers:
-    #     global gs.p4score
-    #     global gs.p3score
-
-    # global gs.p2score
-    # global gs.p1score
-    
     global gs
-
-    '''
-    Updates score according to the last ball thrower
-    '''
     
     if (gs.bx+gs.bxv < gs.p1x+gs.paddle_width_v) and ((gs.p1y < gs.by+gs.byv+gs.bw) and (gs.by+gs.byv-gs.bw < gs.p1y+gs.paddle_height_v)):
         gs.bxv = -gs.bxv
@@ -309,14 +291,14 @@ def upblnv():
     gs.by += gs.byv
 
 def drawscore(screen, font, H, FourPlayers, gs):
-    screen.blit(font.render("Score", False, WHITE), (30,30))
+    screen.blit(font.render("Score", True, WHITE), (30,30))
     
-    screen.blit(font.render(f"{gs.p1score}",False,py1_Color),(H/5,30))
-    screen.blit(font.render(f"{gs.p2score}",False,py2_Color),(2*H/5,30))
+    screen.blit(font.render(f"{gs.p1score}",True,py1_Color),(H/5,30))
+    screen.blit(font.render(f"{gs.p2score}",True,py2_Color),(2*H/5,30))
     
     if FourPlayers:
-        screen.blit(font.render(f"{gs.p3score}",False,py3_Color),(3*H/5,30))
-        screen.blit(font.render(f"{gs.p4score}",False,py4_Color),(4*H/5,30))
+        screen.blit(font.render(f"{gs.p3score}",True,py3_Color),(3*H/5,30))
+        screen.blit(font.render(f"{gs.p4score}",True,py4_Color),(4*H/5,30))
 
 
 def game_loop():
@@ -434,6 +416,7 @@ def game_loop():
         uploc()
         upblnv()
         drawscore(screen, font, gs.H, gs.FourPlayers, gs)
+        screen.blit(font.render(f"SERVER", True, WHITE), (gs.W//2-35,50))
         drawball(screen, gs.bx, gs.by, gs.bw)
 
         drawpaddle(screen, gs.p1x, gs.p1y, gs.paddle_width_v, gs.paddle_height_v, py1_Color) 

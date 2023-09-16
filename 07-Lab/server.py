@@ -8,7 +8,7 @@ from pong4 import *
 
 # IP = socket.gethostbyname(socket.gethostname())
 IP = ''
-PORT = 53533
+PORT = 53535
 ADDR = (IP, PORT)
 SIZE = 4096
 FORMAT = "utf-8"
@@ -37,7 +37,7 @@ def get_next_player():
 def disconnect_client(client: Client):
     '''Disconnect client'''
     print(f"[DISCONNECT CLIENT] {client.addr} disconnected.")
-    print(f"[ACTIVE CLIENTS] {threading.active_count() - 4}")
+    print(f"[ACTIVE CLIENTS] {threading.active_count() - 3}")
 
     clients.remove(client)
     client.conn.close()
@@ -112,7 +112,7 @@ def server_loop():
     server.listen()
     print(f"[LISTENING] Server is listening on {IP}:{PORT}")
 
-    print(f"[ACTIVE CLIENTS] {threading.active_count() - 3}")
+    print(f"[ACTIVE CLIENTS] {threading.active_count() - 2}")
     
     while True: # accept new connection
         conn, addr = server.accept()
@@ -130,19 +130,15 @@ def server_loop():
         thread = threading.Thread(target=handle_client, args=(current_client,))
         thread.start()
         
-        print(f"[ACTIVE CLIENTS] {threading.active_count() - 3}")
+        print(f"[ACTIVE CLIENTS] {threading.active_count() - 2}")
 
 
 
 def main():
-    server_thread = threading.Thread(target=server_loop)
-    server_thread.start()
-
     game_thread = threading.Thread(target=game_loop)
     game_thread.start()
 
-    server_thread.join()
-    game_thread.join()
+    server_loop()
 
 
 if __name__ == "__main__":
@@ -152,4 +148,7 @@ if __name__ == "__main__":
         print("\n[EXITING] Server is shutting down...")
         for client in clients: # send disconnect message to all clients
             client.conn.close()
+        os._exit(0)
+    except OSError as e:
+        print(f"[ERROR] {e}")
         os._exit(0)
