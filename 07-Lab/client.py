@@ -6,7 +6,7 @@ import pygame
 from pong4 import *
 
 IP = socket.gethostbyname(socket.gethostname())
-# IP = '192.168.2.24'
+# IP = '192.168.12.219'
 PORT = 53535
 ADDR = (IP, PORT)
 SIZE = 4096
@@ -28,15 +28,21 @@ def disconnect_server(client: socket.socket, recv_from: str):
     os._exit(0)
 
 
+def recv_msg(client: socket.socket, disconnect_info: str = ""):
+    msg = client.recv(SIZE).decode(FORMAT)
+    if msg == DISCONNECT_MESSAGE:
+        print(disconnect_info)
+        disconnect_server(client, "server")
+    return msg
+
+
 def update_loop():
     global gs
     while True:
         try:
             client.send("GET;".encode(FORMAT))
 
-            msg = client.recv(SIZE).decode(FORMAT)
-            if msg == DISCONNECT_MESSAGE:
-                disconnect_server(client, "server")
+            msg = recv_msg(client)
 
             gs = GameState.from_json(msg)
         except (BrokenPipeError, ConnectionResetError):
@@ -104,13 +110,29 @@ def main():
     client.connect(ADDR)
     print(f"[CONNECTED] Client connected to {IP}:{PORT}")
 
-    msg = client.recv(SIZE).decode(FORMAT)
-    if msg == DISCONNECT_MESSAGE:
-        print(f"Game is full.")
-        disconnect_server(client, "server")
-    
+    # Player number
+    msg = recv_msg(client)
     player = int(msg)
     print(f"[PLAYER] Player {player}")
+
+    # To start the game
+    screen.blit(font.render("Waiting for other players...", True, WHITE), (gs.W//2-150,gs.H//2))
+    pygame.display.flip()
+
+    msg = recv_msg(client)
+    if msg == "START":
+        print(f"[START] Game started.")
+    else:
+        print(f"[ERROR] {msg}")
+        disconnect_server(client, "client")
+    
+    # Starting game in 3 seconds
+    # screen.blit(font.render(f"Starting Game in ", True, WHITE), (gs.W//2-10,gs.H//2))
+    for i in range(3, 0, -1):
+        screen.fill(BLACK)
+        screen.blit(font.render(f"Starting Game in {i}...", True, WHITE), (gs.W//2-130,gs.H//2))
+        pygame.display.flip()
+        pygame.time.wait(1000)
 
     update_thread = threading.Thread(target=update_loop)
     update_thread.start()

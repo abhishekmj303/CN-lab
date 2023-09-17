@@ -71,10 +71,11 @@ def handle_msg(client: Client, msg: str):
             "down": pygame.KEYDOWN,
             "up": pygame.KEYUP,
         }
-        pygame.event.post(pygame.event.Event(
-            presses_map[press],
-            key=keys_map[client.player][key],
-        ))
+        # pygame.event.post(pygame.event.Event(
+        #     presses_map[press],
+        #     key=keys_map[client.player][key],
+        # ))
+        handle_events(presses_map[press], keys_map[client.player][key])
 
 
 def handle_client(client: Client):
@@ -103,6 +104,12 @@ def handle_client(client: Client):
     except Exception as e:
         pass
 
+
+def server_broadcast(msg: str):
+    for client in clients:
+        client.conn.send(msg.encode(FORMAT))
+
+
 def server_loop():
     print(f"[STARTING] Server is starting...")
 
@@ -113,6 +120,8 @@ def server_loop():
     print(f"[LISTENING] Server is listening on {IP}:{PORT}")
 
     print(f"[ACTIVE CLIENTS] {threading.active_count() - 2}")
+
+    game_started = False
     
     while True: # accept new connection
         conn, addr = server.accept()
@@ -132,10 +141,16 @@ def server_loop():
         
         print(f"[ACTIVE CLIENTS] {threading.active_count() - 2}")
 
+        if not game_started:
+            if ((len(clients) == 4 and gs.FourPlayers) or 
+                (len(clients) == 2 and not gs.FourPlayers)):
+                server_broadcast("START")
+                game_started = True
+
 
 
 def main():
-    game_thread = threading.Thread(target=game_loop)
+    game_thread = threading.Thread(target=game_loop, args=(True,))
     game_thread.start()
 
     server_loop()

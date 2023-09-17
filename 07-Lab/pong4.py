@@ -129,8 +129,8 @@ if gs.FourPlayers:
     lrr = False
 
 ##Screen Margins for Paddles
-gs.dmH = gs.H/40
-gs.dmW = gs.W/40
+gs.dmH = gs.H/70
+gs.dmW = gs.W/70
 
 #Vertical Players Paddle Size (Players which stands right and left)
 gs.paddle_width_v = gs.W/60
@@ -154,8 +154,20 @@ gs.byv = 0 #Ball Y Velocity
 def drawpaddle(screen, x, y, w, h, color=WHITE):
     pygame.draw.rect(screen, color, (x, y, w, h))
 
+
 def drawball(screen, x, y, bw):
     pygame.draw.circle(screen, WHITE, (int(x), int(y)), int(bw))
+
+
+def drawscore(screen, font, H, FourPlayers, gs):
+    screen.blit(font.render("Score", True, WHITE), (30,30))
+    
+    screen.blit(font.render(f"{gs.p1score}",True,py1_Color),(H/5,30))
+    screen.blit(font.render(f"{gs.p2score}",True,py2_Color),(2*H/5,30))
+    
+    if FourPlayers:
+        screen.blit(font.render(f"{gs.p3score}",True,py3_Color),(3*H/5,30))
+        screen.blit(font.render(f"{gs.p4score}",True,py4_Color),(4*H/5,30))
 
 
 def uploc(): 
@@ -290,18 +302,99 @@ def upblnv():
     gs.bx += gs.bxv
     gs.by += gs.byv
 
-def drawscore(screen, font, H, FourPlayers, gs):
-    screen.blit(font.render("Score", True, WHITE), (30,30))
-    
-    screen.blit(font.render(f"{gs.p1score}",True,py1_Color),(H/5,30))
-    screen.blit(font.render(f"{gs.p2score}",True,py2_Color),(2*H/5,30))
-    
-    if FourPlayers:
-        screen.blit(font.render(f"{gs.p3score}",True,py3_Color),(3*H/5,30))
-        screen.blit(font.render(f"{gs.p4score}",True,py4_Color),(4*H/5,30))
 
+def handle_events(type, key):
+    global w_p, s_p, wsr, up_p, down_p, udr, a_p, d_p, adr, left_p, right_p, lrr
 
-def game_loop():
+    if type == pygame.KEYDOWN:
+        if key == pygame.K_w:
+            w_p = True
+            if s_p == True:
+                s_p = False
+                wsr = True
+        if key == pygame.K_s:
+            s_p = True
+            if w_p == True:
+                w_p = False
+                wsr = True
+        if key == pygame.K_UP:
+            up_p = True
+            if down_p == True:
+                down_p = False
+                udr = True
+        if key == pygame.K_DOWN:
+            down_p = True
+            if up_p == True:
+                up_p = False
+                udr = True
+
+        if gs.FourPlayers:
+            if key == pygame.K_a:
+                a_p = True
+                if d_p == True:
+                    a_p = False
+                    adr = True
+            if key == pygame.K_d:
+                d_p = True
+                if a_p == True:
+                    d_p = False
+                    adr = True
+            if key == pygame.K_LEFT:
+                left_p = True
+                if right_p == True:
+                    left_p = False
+                    lrr = True
+            if key == pygame.K_RIGHT:
+                right_p = True
+                if left_p == True:
+                    right_p = False
+                    lrr = True
+        
+    elif type == pygame.KEYUP:
+        if key == pygame.K_w:
+            w_p = False
+            if wsr == True:
+                s_p = True
+                wsr = False
+        if key == pygame.K_s:
+            s_p = False
+            if wsr == True:
+                w_p = True
+                wsr = False
+        if key == pygame.K_UP:
+            up_p = False
+            if udr == True:
+                down_p = True
+                udr = False
+        if key == pygame.K_DOWN:
+            down_p = False
+            if udr == True:
+                up_p = True
+                udr = False
+
+        if gs.FourPlayers:
+            if key == pygame.K_a:
+                a_p = False
+                if adr == True:
+                    d_p = True
+                    adr = False
+            if key == pygame.K_d:
+                d_p = False
+                if adr == True:
+                    a_p = True
+                    adr = False
+            if key == pygame.K_LEFT:
+                left_p = False
+                if lrr == True:
+                    right_p = True
+                    lrr = False
+            if key == pygame.K_RIGHT:
+                right_p = False
+                if lrr == True:
+                    left_p = True
+                    lrr = False
+
+def game_loop(server=False):
     global w_p, s_p, wsr, up_p, down_p, udr, a_p, d_p, adr, left_p, right_p, lrr
     global gs
 
@@ -321,95 +414,14 @@ def game_loop():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
-                if event.key == pygame.K_w:
-                    w_p = True
-                    if s_p == True:
-                        s_p = False
-                        wsr = True
-                if event.key == pygame.K_s:
-                    s_p = True
-                    if w_p == True:
-                        w_p = False
-                        wsr = True
-                if event.key == pygame.K_UP:
-                    up_p = True
-                    if down_p == True:
-                        down_p = False
-                        udr = True
-                if event.key == pygame.K_DOWN:
-                    down_p = True
-                    if up_p == True:
-                        up_p = False
-                        udr = True
-
-                if gs.FourPlayers:
-                    if event.key == pygame.K_a:
-                        a_p = True
-                        if d_p == True:
-                            a_p = False
-                            adr = True
-                    if event.key == pygame.K_d:
-                        d_p = True
-                        if a_p == True:
-                            d_p = False
-                            adr = True
-                    if event.key == pygame.K_LEFT:
-                        left_p = True
-                        if right_p == True:
-                            left_p = False
-                            lrr = True
-                    if event.key == pygame.K_RIGHT:
-                        right_p = True
-                        if left_p == True:
-                            right_p = False
-                            lrr = True
+                if not server:
+                    handle_events(event.type, event.key)
+            if event.type == pygame.KEYUP:
+                if not server:
+                    handle_events(event.type, event.key)
 
                 # uploc()
                 # upblnv()
-
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_w:
-                    w_p = False
-                    if wsr == True:
-                        s_p = True
-                        wsr = False
-                if event.key == pygame.K_s:
-                    s_p = False
-                    if wsr == True:
-                        w_p = True
-                        wsr = False
-                if event.key == pygame.K_UP:
-                    up_p = False
-                    if udr == True:
-                        down_p = True
-                        udr = False
-                if event.key == pygame.K_DOWN:
-                    down_p = False
-                    if udr == True:
-                        up_p = True
-                        udr = False
-
-                if gs.FourPlayers:
-                    if event.key == pygame.K_a:
-                        a_p = False
-                        if adr == True:
-                            d_p = True
-                            adr = False
-                    if event.key == pygame.K_d:
-                        d_p = False
-                        if adr == True:
-                            a_p = True
-                            adr = False
-                    if event.key == pygame.K_LEFT:
-                        left_p = False
-                        if lrr == True:
-                            right_p = True
-                            lrr = False
-                    if event.key == pygame.K_RIGHT:
-                        right_p = False
-                        if lrr == True:
-                            left_p = True
-                            lrr = False
 
 
         screen.fill(BLACK)
