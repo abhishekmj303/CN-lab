@@ -14,6 +14,7 @@ class GameState(object):
                  p4x=0, p4y=0, 
                  ball_thrower=0,
                  p1score=0,p2score=0,p3score=0,p4score=0,
+                 paused=False,
                  winner=0,
                  dmH=0,dmW=0,
                  paddle_width_v=0,paddle_height_v=0,
@@ -38,6 +39,7 @@ class GameState(object):
         self.p2score=p2score
         self.p3score=p3score
         self.p4score=p4score
+        self.paused=paused
         self.winner=winner
         self.dmH=dmH
         self.dmW=dmW
@@ -80,7 +82,7 @@ gs.H = gs.W # Height of the game table Game should be a square always to be fair
 screen = pygame.display.set_mode((gs.W, gs.H)) # Screen
 
 gs.FourPlayers = False ## 2 Players or 4 Players mode
-winscore = 1 # Score to win
+winscore = 3 # Score to win
 
 ### PY GAME FONT
 pygame.font.init()
@@ -415,6 +417,15 @@ def handle_events(type, key):
                     left_p = True
                     lrr = False
 
+
+def game_countdown():
+    for i in range(3, 0, -1):
+        screen.fill(BLACK)
+        screen.blit(font.render(f"Starting Game in {i}...", True, WHITE), (gs.W//2-130,gs.H//2))
+        pygame.display.flip()
+        pygame.time.wait(1000)
+
+
 def game_loop(server=False):
     global w_p, s_p, wsr, up_p, down_p, udr, a_p, d_p, adr, left_p, right_p, lrr
     global gs
@@ -427,6 +438,7 @@ def game_loop(server=False):
     screen.fill(BLACK)
     pygame.display.flip()
 
+    prev_paused = False
     running = True
     while running:
         for event in pygame.event.get():
@@ -441,13 +453,20 @@ def game_loop(server=False):
                 if not server:
                     handle_events(event.type, event.key)
 
-                # uploc()
-                # upblnv()
 
+        if server and gs.paused:
+            screen.blit(font.render("Waiting for other players...", True, WHITE), (gs.W//2-150,gs.H//2))
+            pygame.display.flip()
+            prev_paused = True
+            continue
 
-        screen.fill(BLACK)
+        if server and prev_paused and not gs.paused:
+            prev_paused = False
+            game_countdown()
+
         uploc()
         upblnv()
+        screen.fill(BLACK)
         drawscore(screen, font, gs.H, gs.FourPlayers, gs)
         screen.blit(font.render(f"SERVER", True, WHITE), (gs.W//2-35,50))
         drawball(screen, gs.bx, gs.by, gs.bw)

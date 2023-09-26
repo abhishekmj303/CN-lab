@@ -35,11 +35,19 @@ def get_next_player():
             break
     return player
 
+
+def players_full():
+    return ((len(clients) >= 4 and gs.FourPlayers) or 
+            (len(clients) >= 2 and not gs.FourPlayers))
+
+
 def disconnect_client(client: Client):
     '''Disconnect client'''
+    global gs
     print(f"[DISCONNECT CLIENT] {client.addr} disconnected.")
     print(f"[ACTIVE CLIENTS] {threading.active_count() - 3}")
 
+    gs.paused = True
     clients.remove(client)
     client.conn.close()
 
@@ -122,14 +130,14 @@ def server_loop():
 
     print(f"[ACTIVE CLIENTS] {threading.active_count() - 2}")
 
-    game_started = False
+    global gs
+    gs.paused = True
     
     while True: # accept new connection
         conn, addr = server.accept()
         addr = f"{addr[0]}:{addr[1]}"
 
-        if ((len(clients) >= 4 and gs.FourPlayers) or 
-            (len(clients) >= 2 and not gs.FourPlayers)):
+        if players_full():
             conn.send(DISCONNECT_MESSAGE.encode(FORMAT))
             continue
 
@@ -143,11 +151,8 @@ def server_loop():
         print(f"[ACTIVE CLIENTS] {threading.active_count() - 2}")
 
         time.sleep(0.1)
-        if not game_started:
-            if ((len(clients) == 4 and gs.FourPlayers) or 
-                (len(clients) == 2 and not gs.FourPlayers)):
-                server_broadcast("START")
-                game_started = True
+        if gs.paused and players_full():
+            gs.paused = False
 
 
 

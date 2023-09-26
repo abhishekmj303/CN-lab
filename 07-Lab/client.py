@@ -37,6 +37,7 @@ def recv_msg(client: socket.socket, disconnect_info: str = ""):
 
 def update_loop():
     global gs
+    prev_paused = False
     while True:
         try:
             client.send("GET;".encode(FORMAT))
@@ -50,6 +51,16 @@ def update_loop():
         except json.decoder.JSONDecodeError:
             print("[EXCEPTION] JSON Decode Error")
             continue
+
+        if gs.paused:
+            screen.blit(font.render("Waiting for other players...", True, WHITE), (gs.W//2-150,gs.H//2))
+            pygame.display.flip()
+            prev_paused = True
+            continue
+
+        if prev_paused and not gs.paused:
+            prev_paused = False
+            game_countdown()
 
         screen.fill(BLACK)
 
@@ -122,25 +133,6 @@ def main():
     msg = recv_msg(client)
     player = int(msg)
     print(f"[PLAYER] Player {player}")
-
-    # To start the game
-    screen.blit(font.render("Waiting for other players...", True, WHITE), (gs.W//2-150,gs.H//2))
-    pygame.display.flip()
-
-    msg = recv_msg(client)
-    if msg == "START":
-        print(f"[START] Game started.")
-    else:
-        print(f"[ERROR] {msg}")
-        disconnect_server(client, "client")
-    
-    # Starting game in 3 seconds
-    # screen.blit(font.render(f"Starting Game in ", True, WHITE), (gs.W//2-10,gs.H//2))
-    for i in range(3, 0, -1):
-        screen.fill(BLACK)
-        screen.blit(font.render(f"Starting Game in {i}...", True, WHITE), (gs.W//2-130,gs.H//2))
-        pygame.display.flip()
-        pygame.time.wait(1000)
 
     update_thread = threading.Thread(target=update_loop)
     update_thread.start()
