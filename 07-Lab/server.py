@@ -1,6 +1,7 @@
 import socket
 import threading
 import os
+import time
 from dataclasses import dataclass
 
 import pygame
@@ -141,6 +142,7 @@ def server_loop():
         
         print(f"[ACTIVE CLIENTS] {threading.active_count() - 2}")
 
+        time.sleep(0.1)
         if not game_started:
             if ((len(clients) == 4 and gs.FourPlayers) or 
                 (len(clients) == 2 and not gs.FourPlayers)):

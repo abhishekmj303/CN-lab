@@ -14,6 +14,7 @@ class GameState(object):
                  p4x=0, p4y=0, 
                  ball_thrower=0,
                  p1score=0,p2score=0,p3score=0,p4score=0,
+                 winner=0,
                  dmH=0,dmW=0,
                  paddle_width_v=0,paddle_height_v=0,
                  paddle_height_h=0,paddle_width_h=0,
@@ -37,6 +38,7 @@ class GameState(object):
         self.p2score=p2score
         self.p3score=p3score
         self.p4score=p4score
+        self.winner=winner
         self.dmH=dmH
         self.dmW=dmW
         self.paddle_width_v=paddle_width_v
@@ -70,6 +72,7 @@ py1_Color = RED
 py2_Color = GREEN
 py3_Color = BLUE
 py4_Color = YELLOW
+pl = {0: "NO", 1: "Left", 2: "Right", 3: "Top", 4: "Bottom"}
 
 ### Constants
 gs.W = 600 # Width of the game table
@@ -77,6 +80,7 @@ gs.H = gs.W # Height of the game table Game should be a square always to be fair
 screen = pygame.display.set_mode((gs.W, gs.H)) # Screen
 
 gs.FourPlayers = False ## 2 Players or 4 Players mode
+winscore = 1 # Score to win
 
 ### PY GAME FONT
 pygame.font.init()
@@ -303,6 +307,23 @@ def upblnv():
     gs.by += gs.byv
 
 
+def winner():
+    '''
+    Returns the winner of the game
+    '''
+    global gs
+    if gs.p1score == winscore:
+        return 1
+    elif gs.p2score == winscore:
+        return 2
+    elif gs.FourPlayers:
+        if gs.p3score == winscore:
+            return 3
+        elif gs.p4score == winscore:
+            return 4
+    return 0
+
+
 def handle_events(type, key):
     global w_p, s_p, wsr, up_p, down_p, udr, a_p, d_p, adr, left_p, right_p, lrr
 
@@ -440,9 +461,22 @@ def game_loop(server=False):
 
         pygame.display.flip()
         pygame.time.wait(wt)
-        # print("gameloop p1score: ", gs.p1score)
+        
+        gs.winner = winner()
+        if gs.winner != 0:
+            running = False
     
-    os._exit(0)
+    screen.blit(font.render(f"The winner is {pl[gs.winner]} Player", True, WHITE), (gs.W//2-150,gs.H//2))
+    pygame.display.flip()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                os._exit(0)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    os._exit(0)
+        pygame.time.wait(wt)
 
 
 ### Initialize

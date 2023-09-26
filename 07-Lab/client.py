@@ -15,7 +15,6 @@ DISCONNECT_MESSAGE = "QUIT!"
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 player = 0
-pl = {1: "Left", 2: "Right", 3: "Top", 4: "Bottom"}
 
 
 def disconnect_server(client: socket.socket, recv_from: str):
@@ -67,6 +66,15 @@ def update_loop():
             drawpaddle(screen,gs.p4x, gs.p4y, gs.paddle_width_h, gs.paddle_height_h, py4_Color)
         
         pygame.display.flip()
+
+        if gs.winner != 0:
+            screen.blit(font.render(f"{pl[gs.winner]} Player Wins!", True, WHITE), (gs.W//2-100,gs.H//2))
+            if gs.winner == player:
+                screen.blit(font.render("You Win!", True, WHITE), (gs.W//2-50,gs.H//2-50))
+            else:
+                screen.blit(font.render("You Lose!", True, WHITE), (gs.W//2-50,gs.H//2-50))
+            pygame.display.flip()
+            break
         # pygame.time.wait(wt)
 
 
