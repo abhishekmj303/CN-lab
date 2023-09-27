@@ -1,3 +1,5 @@
+# GameFile: pong4.py
+
 import pygame
 import json
 import os
@@ -78,7 +80,8 @@ pl = {0: "NO", 1: "Left", 2: "Right", 3: "Top", 4: "Bottom"}
 
 ### Constants
 gs.W = 600 # Width of the game table
-gs.H = gs.W # Height of the game table Game should be a square always to be fair for 4 player game
+gs.H = gs.W # Height of the game table
+# Game should be a square always to be fair for 4 player game
 screen = pygame.display.set_mode((gs.W, gs.H)) # Screen
 
 gs.FourPlayers = False ## 2 Players or 4 Players mode
@@ -105,7 +108,10 @@ if gs.FourPlayers:
     gs.p4x = gs.W/2 - ((gs.H/60)**2)/2
     gs.p4y = gs.H-(gs.H/30)
 
-gs.ball_thrower = 0 #No player is ball thrower in the first run, to get score the corresponding player should throw the ball, it is a little bit different in my game original one because of 4 play rules.
+gs.ball_thrower = 0
+#No player is ball thrower in the first run, to get score the corresponding
+#player should throw the ball, it is a little bit different in my game original
+#one because of 4 play rules.
 
 #Player Scores
 gs.p1score = 0
@@ -152,7 +158,7 @@ gs.by = gs.H/2 #Ball Y Position
 gs.bw = gs.W/65 #Ball diameter
 
 ## Ball Velocity 
-gs.velocity_raito = 240 #Initial velocity ratio (bigger makes the game slower, smaller makes the game faster)
+gs.velocity_raito = 240 #Initial velocity ratio (bigger makes the game slower)
 gs.bxv = -gs.H/gs.velocity_raito # Ball X Velocity
 gs.byv = 0 #Ball Y Velocity
 
@@ -243,7 +249,9 @@ def upscr():
         elif gs.ball_thrower == 4:
             gs.p4score += 1
 
-    gs.ball_thrower = 0 #Set Ball thrower 0 to be fair, when the corresponding player throws then begin to score it.
+    #Set Ball thrower 0 to be fair, when the corresponding player throws then
+    #begin to score it.
+    gs.ball_thrower = 0
  
 
 def upblnv():
@@ -252,7 +260,9 @@ def upblnv():
     ''' 
     global gs
     
-    if (gs.bx+gs.bxv < gs.p1x+gs.paddle_width_v) and ((gs.p1y < gs.by+gs.byv+gs.bw) and (gs.by+gs.byv-gs.bw < gs.p1y+gs.paddle_height_v)):
+    if ((gs.bx+gs.bxv < gs.p1x+gs.paddle_width_v) 
+        and ((gs.p1y < gs.by+gs.byv+gs.bw) 
+             and (gs.by+gs.byv-gs.bw < gs.p1y+gs.paddle_height_v))):
         gs.bxv = -gs.bxv
         gs.byv = ((gs.p1y+(gs.p1y+gs.paddle_height_v))/2)-gs.by
         gs.byv = -gs.byv/((5*gs.bw)/7)
@@ -264,7 +274,9 @@ def upblnv():
         gs.by = gs.H/2
         gs.byv = 0
 
-    if (gs.bx+gs.bxv > gs.p2x) and ((gs.p2y < gs.by+gs.byv+gs.bw) and (gs.by+gs.byv-gs.bw < gs.p2y+gs.paddle_height_v)):
+    if ((gs.bx+gs.bxv > gs.p2x) 
+        and ((gs.p2y < gs.by+gs.byv+gs.bw) 
+             and (gs.by+gs.byv-gs.bw < gs.p2y+gs.paddle_height_v))):
         gs.bxv = -gs.bxv
         gs.byv = ((gs.p2y+(gs.p2y+gs.paddle_height_v))/2)-gs.by
         gs.byv = -gs.byv/((5*gs.bw)/7)
@@ -278,7 +290,9 @@ def upblnv():
 
     
     if gs.FourPlayers:##4 Player Mode        
-        if (gs.by+gs.byv < gs.p3y+gs.paddle_height_h) and ((gs.p3x < gs.bx+gs.bxv+gs.bw) and (gs.bx+gs.bxv-gs.bw < gs.p3x+gs.paddle_width_h)):
+        if ((gs.by+gs.byv < gs.p3y+gs.paddle_height_h) 
+            and ((gs.p3x < gs.bx+gs.bxv+gs.bw) 
+                 and (gs.bx+gs.bxv-gs.bw < gs.p3x+gs.paddle_width_h))):
             gs.byv = -gs.byv
             gs.bxv = ((gs.p3x+(gs.p3x+gs.paddle_width_h))/2)-gs.bx
             gs.bxv = -gs.bxv/((5*gs.bw)/7)
@@ -290,7 +304,9 @@ def upblnv():
             gs.bx = gs.W/2
             gs.bxv = 0
 
-        if (gs.by+gs.byv > gs.p4y) and ((gs.p4x < gs.bx+gs.bxv+gs.bw) and (gs.bx+gs.bxv-gs.bw < gs.p4x+gs.paddle_width_h)):
+        if ((gs.by+gs.byv > gs.p4y) 
+            and ((gs.p4x < gs.bx+gs.bxv+gs.bw) 
+                 and (gs.bx+gs.bxv-gs.bw < gs.p4x+gs.paddle_width_h))):
             gs.byv = -gs.byv
             gs.bxv = ((gs.p4x+(gs.p4x+gs.paddle_width_h))/2)-gs.bx
             gs.bxv = -gs.bxv/((5*gs.bw)/7)
@@ -421,7 +437,10 @@ def handle_events(type, key):
 def game_countdown():
     for i in range(3, 0, -1):
         screen.fill(BLACK)
-        screen.blit(font.render(f"Starting Game in {i}...", True, WHITE), (gs.W//2-130,gs.H//2))
+        screen.blit(
+            font.render(f"Starting Game in {i}...", True, WHITE), 
+            (gs.W//2-130,gs.H//2)
+        )
         pygame.display.flip()
         pygame.time.wait(1000)
 
@@ -455,7 +474,10 @@ def game_loop(server=False):
 
 
         if server and gs.paused:
-            screen.blit(font.render("Waiting for other players...", True, WHITE), (gs.W//2-150,gs.H//2))
+            screen.blit(
+                font.render("Waiting for other players...", True, WHITE), 
+                (gs.W//2-150,gs.H//2)
+            )
             pygame.display.flip()
             prev_paused = True
             continue
@@ -471,12 +493,28 @@ def game_loop(server=False):
         screen.blit(font.render(f"SERVER", True, WHITE), (gs.W//2-35,50))
         drawball(screen, gs.bx, gs.by, gs.bw)
 
-        drawpaddle(screen, gs.p1x, gs.p1y, gs.paddle_width_v, gs.paddle_height_v, py1_Color) 
-        drawpaddle(screen, gs.p2x, gs.p2y, gs.paddle_width_v, gs.paddle_height_v, py2_Color)
+        drawpaddle(screen, 
+                   gs.p1x, gs.p1y, 
+                   gs.paddle_width_v, gs.paddle_height_v, 
+                   py1_Color
+        ) 
+        drawpaddle(screen, 
+                   gs.p2x, gs.p2y, 
+                   gs.paddle_width_v, gs.paddle_height_v, 
+                   py2_Color
+        )
 
         if gs.FourPlayers:
-            drawpaddle(screen, gs.p3x, gs.p3y, gs.paddle_width_h, gs.paddle_height_h, py3_Color)
-            drawpaddle(screen, gs.p4x, gs.p4y, gs.paddle_width_h, gs.paddle_height_h, py4_Color)
+            drawpaddle(screen, 
+                       gs.p3x, gs.p3y, 
+                       gs.paddle_width_h, gs.paddle_height_h, 
+                       py3_Color
+            )
+            drawpaddle(screen, 
+                       gs.p4x, gs.p4y, 
+                       gs.paddle_width_h, gs.paddle_height_h, 
+                       py4_Color
+            )
 
         pygame.display.flip()
         pygame.time.wait(wt)
@@ -485,7 +523,10 @@ def game_loop(server=False):
         if gs.winner != 0:
             running = False
     
-    screen.blit(font.render(f"The winner is {pl[gs.winner]} Player", True, WHITE), (gs.W//2-150,gs.H//2))
+    screen.blit(
+        font.render(f"The winner is {pl[gs.winner]} Player", True, WHITE), 
+        (gs.W//2-150,gs.H//2)
+    )
     pygame.display.flip()
 
     while True:

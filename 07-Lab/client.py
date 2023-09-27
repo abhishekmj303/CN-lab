@@ -1,3 +1,5 @@
+# ClientProgram: client.py
+
 import socket
 import threading
 import os
@@ -53,7 +55,10 @@ def update_loop():
             continue
 
         if gs.paused:
-            screen.blit(font.render("Waiting for other players...", True, WHITE), (gs.W//2-150,gs.H//2))
+            screen.blit(
+                font.render("Waiting for other players...", True, WHITE), 
+                (gs.W//2-150,gs.H//2)
+            )
             pygame.display.flip()
             prev_paused = True
             continue
@@ -65,25 +70,53 @@ def update_loop():
         screen.fill(BLACK)
 
         tag_pos = 50 if gs.FourPlayers else 5
-        screen.blit(font.render(f"{pl[player]} Player", True, WHITE), (gs.W//2-65,tag_pos))
+        screen.blit(
+            font.render(f"{pl[player]} Player", True, WHITE), 
+            (gs.W//2-65,tag_pos)
+        )
         drawscore(screen, font, gs.H, gs.FourPlayers, gs)
         drawball(screen, gs.bx, gs.by, gs.bw)
 
-        drawpaddle(screen,gs.p1x, gs.p1y, gs.paddle_width_v, gs.paddle_height_v, py1_Color) 
-        drawpaddle(screen,gs.p2x, gs.p2y, gs.paddle_width_v, gs.paddle_height_v, py2_Color)
+        drawpaddle(screen,
+                   gs.p1x, gs.p1y, 
+                   gs.paddle_width_v, gs.paddle_height_v, 
+                   py1_Color
+        ) 
+        drawpaddle(screen,
+                   gs.p2x, gs.p2y, 
+                   gs.paddle_width_v, gs.paddle_height_v, 
+                   py2_Color
+        )
 
         if gs.FourPlayers:
-            drawpaddle(screen,gs.p3x, gs.p3y, gs.paddle_width_h, gs.paddle_height_h, py3_Color)
-            drawpaddle(screen,gs.p4x, gs.p4y, gs.paddle_width_h, gs.paddle_height_h, py4_Color)
+            drawpaddle(screen,
+                       gs.p3x, gs.p3y, 
+                       gs.paddle_width_h, gs.paddle_height_h, 
+                       py3_Color
+            )
+            drawpaddle(screen,
+                       gs.p4x, gs.p4y, 
+                       gs.paddle_width_h, gs.paddle_height_h, 
+                       py4_Color
+            )
         
         pygame.display.flip()
 
         if gs.winner != 0:
-            screen.blit(font.render(f"{pl[gs.winner]} Player Wins!", True, WHITE), (gs.W//2-100,gs.H//2))
+            screen.blit(
+                font.render(f"{pl[gs.winner]} Player Wins!", True, WHITE), 
+                (gs.W//2-100,gs.H//2)
+            )
             if gs.winner == player:
-                screen.blit(font.render("You Win!", True, WHITE), (gs.W//2-50,gs.H//2-50))
+                screen.blit(
+                    font.render("You Win!", True, WHITE), 
+                    (gs.W//2-50,gs.H//2-50)
+                )
             else:
-                screen.blit(font.render("You Lose!", True, WHITE), (gs.W//2-50,gs.H//2-50))
+                screen.blit(
+                    font.render("You Lose!", True, WHITE), 
+                    (gs.W//2-50,gs.H//2-50)
+                )
             pygame.display.flip()
             break
         # pygame.time.wait(wt)

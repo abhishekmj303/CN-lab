@@ -1,3 +1,5 @@
+# ServerProgram: server.py
+
 import socket
 import threading
 import os
@@ -80,10 +82,6 @@ def handle_msg(client: Client, msg: str):
             "down": pygame.KEYDOWN,
             "up": pygame.KEYUP,
         }
-        # pygame.event.post(pygame.event.Event(
-        #     presses_map[press],
-        #     key=keys_map[client.player][key],
-        # ))
         handle_events(presses_map[press], keys_map[client.player][key])
 
 
