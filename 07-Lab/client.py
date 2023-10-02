@@ -167,10 +167,16 @@ def main():
     player = int(msg)
     print(f"[PLAYER] Player {player}")
 
-    update_thread = threading.Thread(target=update_loop)
-    update_thread.start()
+    # update_thread = threading.Thread(target=update_loop)
+    # update_thread.start()
 
-    game_loop()
+    # game_loop()
+
+    game_thread = threading.Thread(target=game_loop)
+    game_thread.start()
+
+    update_loop()
+    game_thread.join()
 
     disconnect_server(client, "client")
 

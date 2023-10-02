@@ -122,7 +122,11 @@ def server_loop():
 
     # create socket, bind to address, and listen
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(ADDR)
+    try:
+        server.bind(ADDR)
+    except OSError as e:
+        print(f"[ERROR] {e}")
+        os._exit(0)
     server.listen()
     print(f"[LISTENING] Server is listening on {IP}:{PORT}")
 
@@ -155,10 +159,15 @@ def server_loop():
 
 
 def main():
-    game_thread = threading.Thread(target=game_loop, args=(True,))
-    game_thread.start()
+    # game_thread = threading.Thread(target=game_loop, args=(True,))
+    # game_thread.start()
 
-    server_loop()
+    # server_loop()
+
+    server_thread = threading.Thread(target=server_loop)
+    server_thread.start()
+
+    game_loop(True)
 
 
 if __name__ == "__main__":
