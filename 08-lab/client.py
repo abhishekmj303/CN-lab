@@ -3,6 +3,7 @@
 import socket
 import threading
 import os
+import re
 from getmac import get_mac_address
 
 import pygame
@@ -25,7 +26,12 @@ connected = False
 
 def game_entry():
     def register():
-        mac = mac_entry.get()
+        try:
+            mac = get_mac_entry()
+        except ValueError as e:
+            print(f"Registration Failed: {e}")
+            messagebox.showerror("Registration Failed", e)
+            return
         client.send(f"REGISTER/{mac};".encode(FORMAT))
         msg = recv_msg(client)
         if msg == "OK":
@@ -36,7 +42,12 @@ def game_entry():
             messagebox.showerror("Registration Failed", f"Registration Failed: {msg}")
     
     def login():
-        mac = mac_entry.get()
+        try:
+            mac = get_mac_entry()
+        except ValueError as e:
+            print(f"Login Failed: {e}")
+            messagebox.showerror("Login Failed", e)
+            return
         client.send(f"LOGIN/{mac};".encode(FORMAT))
         msg = recv_msg(client)
         if msg == "OK":
@@ -47,8 +58,13 @@ def game_entry():
             messagebox.showerror("Login Failed", f"Login Failed: {msg}")
     
     def pay():
-        mac = mac_entry.get()
-        amount = amount_entry.get()
+        try:
+            mac = get_mac_entry()
+            amount = get_amount_entry()
+        except ValueError as e:
+            print(f"Payment Failed: {e}")
+            messagebox.showerror("Payment Failed", e)
+            return 
         client.send(f"PAY/{mac}/{amount};".encode(FORMAT))
         msg = recv_msg(client)
         if msg == "OK":
@@ -57,7 +73,25 @@ def game_entry():
         else:
             print(f"Payment Failed: {msg}")
             messagebox.showerror("Payment Failed", f"Payment Failed: {msg}")
+
+    def get_mac_entry():
+        mac = mac_entry.get()
+        # regex for mac
+        mac_regex = r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+        if re.match(mac_regex, mac):
+            return mac.replace("-", ":")
+        else:
+            raise ValueError(f"Invalid MAC Address: {mac}")
     
+    def get_amount_entry():
+        amount = amount_entry.get()
+        # regex for amount
+        amount_regex = r"^[1-9]\d*$"
+        if re.match(amount_regex, amount):
+            return amount
+        else:
+            raise ValueError(f"Invalid Amount: {amount}")
+
     def end_tk():
         start_tk.destroy()
         disconnect_server(client, "client")
