@@ -2,7 +2,7 @@
 
 import pygame
 import json
-import os
+from collections import defaultdict
 
 class GameState(object):
     def __init__(self, **kwargs):
@@ -78,7 +78,7 @@ py1_Color = RED
 py2_Color = GREEN
 py3_Color = BLUE
 py4_Color = YELLOW
-pl = {0: "NO", 1: "Left", 2: "Right", 3: "Top", 4: "Bottom"}
+pl = defaultdict(lambda: "NO", {1: "Left", 2: "Right", 3: "Top", 4: "Bottom"})
 
 screen = pygame.display.set_mode((gs.W, gs.H)) # Screen
 
@@ -420,9 +420,11 @@ def game_loop(server=False):
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                gs.winner = -5
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    gs.winner = -5
                     running = False
                 if not server:
                     handle_events(event.type, event.key)
@@ -431,9 +433,9 @@ def game_loop(server=False):
                     handle_events(event.type, event.key)
 
 
-        if server and gs.paused:
+        if server and gs.paused and gs.winner == 0:
             screen.blit(
-                font.render("Waiting for other players...", True, WHITE), 
+                font.render("Waiting for game to start...", True, WHITE), 
                 (gs.W//2-150,gs.H//2)
             )
             pygame.display.flip()
@@ -483,7 +485,8 @@ def game_loop(server=False):
         pygame.display.flip()
         pygame.time.wait(wt)
         
-        gs.winner = winner()
+        if gs.winner >= 0: 
+            gs.winner = winner()
         if gs.winner != 0:
             running = False
     

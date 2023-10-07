@@ -17,7 +17,6 @@ PORT = 53533
 ADDR = (IP, PORT)
 SIZE = 4096
 FORMAT = "utf-8"
-DISCONNECT_MESSAGE = "QUIT!"
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 player = 0
@@ -73,6 +72,23 @@ def game_entry():
         else:
             print(f"Payment Failed: {msg}")
             messagebox.showerror("Payment Failed", f"Payment Failed: {msg}")
+    
+    def balance():
+        try:
+            mac = get_mac_entry()
+        except ValueError as e:
+            print(f"Balance Check Failed: {e}")
+            messagebox.showerror("Balance Check Failed", e)
+            return
+        client.send(f"BALANCE/{mac};".encode(FORMAT))
+        msg = recv_msg(client)
+        if "OK" in msg:
+            _, time_left = msg.split("/")
+            print(f"Time left for MAC Address: {mac} is {time_left} sec")
+            messagebox.showinfo("Balance Check Successful", f"Time left for MAC Address: {mac} is {time_left} sec")
+        else:
+            print(f"Balance Check Failed: {msg}")
+            messagebox.showerror("Balance Check Failed", f"Balance Check Failed: {msg}")
 
     def get_mac_entry():
         mac = mac_entry.get()
@@ -118,13 +134,15 @@ def game_entry():
 
     # Create Pay button
     pay_button = tk.Button(start_tk, text="Pay", command=pay)
+    balance_button = tk.Button(start_tk, text="Check Balance", command=balance)
 
     # Create Register and Login buttons
     register_button = tk.Button(start_tk, text="Register", command=register)
     login_button = tk.Button(start_tk, text="Login", command=login)
 
     register_button.grid(row=1, column=0, columnspan=2)
-    pay_button.grid(row=3, column=0, columnspan=2)
+    balance_button.grid(row=3, column=0)
+    pay_button.grid(row=3, column=1)
     login_button.grid(row=4, column=0, columnspan=2)
 
     start_tk.protocol("WM_DELETE_WINDOW", end_tk)
@@ -135,8 +153,8 @@ def game_entry():
 def disconnect_server(client: socket.socket, recv_from: str):
     global connected
     connected = False
-    client.send(DISCONNECT_MESSAGE.encode(FORMAT))
     if recv_from == "client":
+        client.send(f"QUIT".encode(FORMAT))
         print(f"[DISCONNECTED] Client disconnected from {IP}:{PORT}")
     elif recv_from == "server":
         print(f"[DISCONNECTED] Server disconnected from Client.")
@@ -144,10 +162,9 @@ def disconnect_server(client: socket.socket, recv_from: str):
     # os._exit(0)
 
 
-def recv_msg(client: socket.socket, disconnect_info: str = ""):
+def recv_msg(client: socket.socket):
     msg = client.recv(SIZE).decode(FORMAT)
-    if msg == DISCONNECT_MESSAGE:
-        print(disconnect_info)
+    if msg == "QUIT":
         disconnect_server(client, "server")
     return msg
 
@@ -171,11 +188,16 @@ def update_loop():
             print("[EXCEPTION] JSON Decode Error")
             continue
 
-        if gs.paused:
+        if gs.paused and abs(gs.winner) != player:
             screen.blit(
-                font.render("Waiting for other players...", True, WHITE), 
+                font.render("Waiting for game to start...", True, WHITE), 
                 (gs.W//2-150,gs.H//2)
             )
+            if gs.winner < 0:
+                screen.blit(
+                    font.render("Other player timeout", True, WHITE), 
+                    (gs.W//2-110,gs.H//2-50)
+                )
             pygame.display.flip()
             prev_paused = True
             continue
@@ -226,16 +248,26 @@ def update_loop():
                 font.render(f"{pl[gs.winner]} Player Wins!", True, WHITE), 
                 (gs.W//2-100,gs.H//2)
             )
-            if gs.winner == player:
-                screen.blit(
-                    font.render("You Win!", True, WHITE), 
-                    (gs.W//2-50,gs.H//2-50)
-                )
+            winner_msg = ""
+            winner_msg_offset = 0 
+            if gs.winner == -5:
+                winner_msg = "Players Disconnected"
+                winner_msg_offset = 120
+            elif gs.winner == -player:
+                winner_msg = "Time Out"
+                winner_msg_offset = 50
+            elif gs.winner < 0:
+                continue
+            elif gs.winner == player:
+                winner_msg = "You Win!"
+                winner_msg_offset = 50
             else:
-                screen.blit(
-                    font.render("You Lose!", True, WHITE), 
-                    (gs.W//2-50,gs.H//2-50)
-                )
+                winner_msg = "You Lose!"
+                winner_msg_offset = 50
+            screen.blit(
+                font.render(winner_msg, True, WHITE), 
+                (gs.W//2-winner_msg_offset,gs.H//2-50)
+            )
             pygame.display.flip()
             break
         # pygame.time.wait(wt)

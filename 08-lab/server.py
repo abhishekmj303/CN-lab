@@ -15,14 +15,13 @@ PORT = 53533
 ADDR = (IP, PORT)
 SIZE = 4096
 FORMAT = "utf-8"
-DISCONNECT_MESSAGE = "QUIT!"
 
-clients = {} # all registered clients to the server
+registered = {} # all registered clients to the server
+logged_in = [] # all logged in clients to the server
+
+clients = [] # list of all clients connected to the server
 players = [] # list of players currently playing
 queue = [] # list of clients waiting to play
-
-logged_in_macs = []
-active_clients = 0
 
 max_players = 4 if gs.FourPlayers else 2
 game_price = 60/100 # 60 seconds per 100 rupees
@@ -38,7 +37,7 @@ class Client:
     connected: bool = True
 
 
-def get_next_player():
+def next_player_num():
     if players_full():
         return -1
     all_players = sorted([c.player for c in players])
@@ -57,34 +56,46 @@ def players_full():
 
 def disconnect_client(client: Client):
     '''Disconnect client'''
-    global gs, active_clients
+    global gs
     print(f"[DISCONNECT CLIENT] {client.addr} disconnected.")
 
-    active_clients -= 1
-    print(f"[ACTIVE CLIENTS] {active_clients}")
+    client.connected = False
+
+    clients.remove(client)
+    print(f"[ACTIVE CLIENTS] {len(clients)}")
 
     if client in players:
         gs.paused = True
+        gs.winner = -5
         players.remove(client)
-    else:
+    elif client in queue:
         queue.remove(client)
-    client.connected = False
     try:
-        logged_in_macs.remove(client.mac)
+        logged_in.remove(client.mac)
         client.conn.close()
     except:
         pass
 
 
-def start_next_game():
+def setup_next_game():
     global gs
-    gs.reset()
-    gs.paused = True
+    
+    screen.fill(BLACK)
+    screen.blit(
+        font.render("Starting next game...", True, WHITE), 
+        (gs.W//2-100,gs.H//2)
+    )
+    pygame.display.flip()
 
-    players.clear()
+    # gs.paused = True
+    time.sleep(0.1)
+
+    gs.reset()
+    gs.paused = True 
+
     while len(queue) > 0 and not players_full():
         c = queue.pop(0)
-        c.player = get_next_player()
+        c.player = next_player_num()
         players.append(c)
         c.conn.send(f"{c.player}".encode(FORMAT))
     
@@ -100,22 +111,23 @@ def player_timer(client: Client):
             continue
         client.time -= 1
         if client.time < 0:
-            client.conn.send(DISCONNECT_MESSAGE.encode(FORMAT))
-            disconnect_client(client)
-            break
-        time.sleep(1)
+            gs.paused = True
+            gs.winner = -client.player
+            client.time = 0.0
+        else:
+            time.sleep(1)
+ 
 
-
-def add_player(client: Client):
+def login_player(client: Client):
     global gs
 
-    logged_in_macs.append(client.mac)
+    logged_in.append(client.mac)
 
     if players_full():
         client.player = -1
         queue.append(client)
     else:
-        client.player = get_next_player()
+        client.player = next_player_num()
         players.append(client)
         timer_thread = threading.Thread(target=player_timer, args=(client,))
         timer_thread.start()
@@ -135,30 +147,39 @@ def handle_msg(client: Client, msg: str):
         client.conn.send(gs.to_json().encode(FORMAT))
     elif "REGISTER" in msg:
         _, mac = msg.split("/")
-        if mac in clients:
+        if mac in registered:
             client.conn.send("MAC already registered".encode(FORMAT))
         else:
-            clients[mac] = client
+            registered[mac] = client
             client.mac = mac
             client.conn.send("OK".encode(FORMAT))
     elif "LOGIN" in msg:
         _, mac = msg.split("/")
-        if mac in logged_in_macs:
+        if mac in logged_in:
             client.conn.send("MAC already logged in".encode(FORMAT))
-        elif mac in clients:
+        elif mac in registered:
             client.mac = mac
-            client.time = clients[mac].time
-            clients[mac] = client
+            client.time = registered[mac].time
+            if client.time <= 0:
+                client.conn.send("No time left, Please pay to continue".encode(FORMAT))
+                return
+            registered[mac] = client
             client.conn.send("OK".encode(FORMAT))
             time.sleep(0.1)
-            add_player(client)
+            login_player(client)
         else:
             client.conn.send("MAC not registered".encode(FORMAT))
     elif "PAY" in msg:
         _, mac, amount = msg.split("/")
-        if mac in clients:
-            clients[mac].time += int(amount) * game_price
+        if mac in registered:
+            registered[mac].time += round(int(amount) * game_price, 2)
             client.conn.send("OK".encode(FORMAT))
+        else:
+            client.conn.send("MAC not registered".encode(FORMAT))
+    elif "BALANCE" in msg:
+        _, mac = msg.split("/")
+        if mac in registered:
+            client.conn.send(f"OK/{registered[mac].time}".encode(FORMAT))
         else:
             client.conn.send("MAC not registered".encode(FORMAT))
     else:
@@ -193,11 +214,9 @@ def handle_client(client: Client):
     conn = client.conn
     print(f"[NEW CLIENT] {addr} connected.")
 
-    # conn.send(f"{client.player}".encode(FORMAT))
-
     while client.connected: # recieve message from client
         from_msg = conn.recv(SIZE).decode(FORMAT)
-        if from_msg == DISCONNECT_MESSAGE:
+        if from_msg == "QUIT":
             break
         elif not from_msg:
             continue
@@ -216,12 +235,12 @@ def handle_client(client: Client):
 
 
 def server_broadcast(msg: str):
-    for client in clients:
+    for client in registered:
         client.conn.send(msg.encode(FORMAT))
 
 
 def server_loop():
-    global gs, active_clients
+    global gs
     print(f"[STARTING] Server is starting...")
 
     # create socket, bind to address, and listen
@@ -234,7 +253,7 @@ def server_loop():
     server.listen()
     print(f"[LISTENING] Server is listening on {IP}:{PORT}")
 
-    print(f"[ACTIVE CLIENTS] {active_clients}")
+    print(f"[ACTIVE CLIENTS] {len(clients)}")
 
     gs.paused = True
     
@@ -242,26 +261,17 @@ def server_loop():
         conn, addr = server.accept()
         addr = f"{addr[0]}:{addr[1]}"
 
-        # if players_full():
-        #     conn.send(DISCONNECT_MESSAGE.encode(FORMAT))
-        #     continue
-
         current_client = Client(conn, addr, 0)
-        active_clients += 1
+        clients.append(current_client) 
 
         # start new thread to handle client
         thread = threading.Thread(target=handle_client, args=(current_client,))
         thread.start()
         
-        print(f"[ACTIVE CLIENTS] {active_clients}")
+        print(f"[ACTIVE CLIENTS] {len(clients)}")
 
 
 def main():
-    # game_thread = threading.Thread(target=game_loop, args=(True,))
-    # game_thread.start()
-
-    # server_loop()
-
     server_thread = threading.Thread(target=server_loop)
     server_thread.start()
 
@@ -270,14 +280,7 @@ def main():
 
     while True:
         game_loop(True)
-        screen.fill(BLACK)
-        screen.blit(
-            font.render("Starting next game...", True, WHITE), 
-            (gs.W//2-100,gs.H//2)
-        )
-        pygame.display.flip()
-        time.sleep(2)
-        start_next_game()
+        setup_next_game()
 
 
 if __name__ == "__main__":
@@ -285,10 +288,10 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt: # handle keyboard interrupt
         print("\n[EXITING] Server is shutting down...")
-        for client in players: # send disconnect message to all clients
-            client.conn.close()
-        for client in queue:
-            client.conn.close()
+        for client in clients:
+            client.conn.send("QUIT".encode(FORMAT)) 
+            disconnect_client(client)
+            # client.conn.close()
         os._exit(0)
     except OSError as e:
         print(f"[ERROR] {e}")
