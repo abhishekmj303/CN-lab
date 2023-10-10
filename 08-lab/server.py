@@ -97,6 +97,8 @@ def setup_next_game():
         c = queue.pop(0)
         c.player = next_player_num()
         players.append(c)
+        timer_thread = threading.Thread(target=player_timer, args=(c,))
+        timer_thread.start()
         c.conn.send(f"{c.player}".encode(FORMAT))
     
     if players_full():

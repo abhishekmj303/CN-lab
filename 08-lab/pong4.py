@@ -485,7 +485,7 @@ def game_loop(server=False):
         pygame.display.flip()
         pygame.time.wait(wt)
         
-        if gs.winner >= 0: 
+        if gs.winner >= 0:
             gs.winner = winner()
         if gs.winner != 0:
             running = False
