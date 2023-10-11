@@ -11,7 +11,7 @@ from pong4 import *
 
 # IP = socket.gethostbyname(socket.gethostname())
 IP = ''
-PORT = 53533
+PORT = 53535
 ADDR = (IP, PORT)
 SIZE = 4096
 FORMAT = "utf-8"

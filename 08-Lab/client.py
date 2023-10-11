@@ -13,7 +13,7 @@ from tkinter import messagebox
 
 IP = socket.gethostbyname(socket.gethostname())
 # IP = '192.168.12.219'
-PORT = 53533
+PORT = 53535
 ADDR = (IP, PORT)
 SIZE = 4096
 FORMAT = "utf-8"
@@ -123,6 +123,7 @@ def game_entry():
     mac_entry.grid(row=0, column=1)
 
     mac_entry.insert(0, get_mac_address())
+    # mac_entry.config(state="readonly")
 
     # Create a label and entry widget for payment amount
     amount_label = tk.Label(start_tk, text="Amount (100/min):")
@@ -171,7 +172,6 @@ def recv_msg(client: socket.socket):
 
 def update_loop():
     global gs, connected
-    prev_paused = False
     while True:
         try:
             client.send("GET;".encode(FORMAT))
@@ -195,11 +195,10 @@ def update_loop():
             )
             if gs.winner < 0:
                 screen.blit(
-                    font.render("Other player timeout", True, WHITE), 
+                    font.render("Other player out", True, WHITE), 
                     (gs.W//2-110,gs.H//2-50)
                 )
             pygame.display.flip()
-            prev_paused = True
             continue
 
         # if prev_paused and not gs.paused:
@@ -250,10 +249,7 @@ def update_loop():
             )
             winner_msg = ""
             winner_msg_offset = 0 
-            if gs.winner == -5:
-                winner_msg = "Players Disconnected"
-                winner_msg_offset = 120
-            elif gs.winner == -player:
+            if gs.winner == -player:
                 winner_msg = "Time Out"
                 winner_msg_offset = 50
             elif gs.winner < 0:
