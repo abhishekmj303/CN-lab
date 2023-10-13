@@ -35,10 +35,16 @@ def game_entry():
         msg = recv_msg(client)
         if msg == "OK":
             print(f"Registered MAC Address: {mac}")
-            messagebox.showinfo("Registration Successful", f"Registered MAC Address: {mac}")
+            messagebox.showinfo(
+                "Registration Successful",
+                f"Registered MAC Address: {mac}"
+            )
         else:
             print(f"Registration Failed: {msg}")
-            messagebox.showerror("Registration Failed", f"Registration Failed: {msg}")
+            messagebox.showerror(
+                "Registration Failed",
+                f"Registration Failed: {msg}"
+            )
     
     def login():
         try:
@@ -68,7 +74,10 @@ def game_entry():
         msg = recv_msg(client)
         if msg == "OK":
             print(f"Paid {amount} for MAC Address: {mac}")
-            messagebox.showinfo("Payment Successful", f"Paid {amount} for MAC Address: {mac}")
+            messagebox.showinfo(
+                "Payment Successful",
+                f"Paid {amount} for MAC Address: {mac}"
+            )
         else:
             print(f"Payment Failed: {msg}")
             messagebox.showerror("Payment Failed", f"Payment Failed: {msg}")
@@ -85,10 +94,16 @@ def game_entry():
         if "OK" in msg:
             _, time_left = msg.split("/")
             print(f"Time left for MAC Address: {mac} is {time_left} sec")
-            messagebox.showinfo("Balance Check Successful", f"Time left for MAC Address: {mac} is {time_left} sec")
+            messagebox.showinfo(
+                "Balance Check Successful",
+                f"Time left for MAC Address: {mac} is {time_left} sec"
+            )
         else:
             print(f"Balance Check Failed: {msg}")
-            messagebox.showerror("Balance Check Failed", f"Balance Check Failed: {msg}")
+            messagebox.showerror(
+                "Balance Check Failed", 
+                f"Balance Check Failed: {msg}"
+            )
 
     def get_mac_entry():
         mac = mac_entry.get()
@@ -179,8 +194,6 @@ def update_loop():
             msg = recv_msg(client)
 
             gs.from_json(msg)
-            # pltime = {1: gs.p1time, 2: gs.p2time, 3: gs.p3time, 4: gs.p4time}
-            # print(f"[TIME] Player {player} time: {pltime[player]}")
         except (BrokenPipeError, ConnectionResetError):
             print(f"[EXCEPTION] Connection error: Server not connected")
             os._exit(0)
@@ -201,9 +214,6 @@ def update_loop():
             pygame.display.flip()
             continue
 
-        # if prev_paused and not gs.paused:
-        #     prev_paused = False
-        #     game_countdown()
 
         screen.fill(BLACK)
 
@@ -332,17 +342,11 @@ def main():
         else:
             break
 
-    # update_thread = threading.Thread(target=update_loop)
-    # update_thread.start()
-
-    # game_loop()
 
     game_thread = threading.Thread(target=game_loop)
     game_thread.start()
 
     update_loop()
-
-    # game_thread.join()
 
     while True:
         for event in pygame.event.get():

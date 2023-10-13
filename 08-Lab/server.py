@@ -55,7 +55,6 @@ def players_full():
 
 
 def disconnect_client(client: Client):
-    '''Disconnect client'''
     global gs
     print(f"[DISCONNECT CLIENT] {client.addr} disconnected.")
 
@@ -163,7 +162,9 @@ def handle_msg(client: Client, msg: str):
             client.mac = mac
             client.time = registered[mac].time
             if client.time <= 0:
-                client.conn.send("No time left, Please pay to continue".encode(FORMAT))
+                client.conn.send(
+                    "No time left, Please pay to continue".encode(FORMAT)
+                )
                 return
             registered[mac] = client
             client.conn.send("OK".encode(FORMAT))

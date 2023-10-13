@@ -57,7 +57,9 @@ class GameState(object):
                 self.p4time = time
 
     def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=2)
+        return json.dumps(
+            self, default=lambda o: o.__dict__, sort_keys=True, indent=2
+        )
 
     def from_json(self, json_str):
         json_dict = json.loads(json_str)
@@ -415,7 +417,6 @@ def game_loop(server=False):
     screen.fill(BLACK)
     pygame.display.flip()
 
-    prev_paused = False
     running = True
     while running:
         for event in pygame.event.get():
@@ -439,12 +440,8 @@ def game_loop(server=False):
                 (gs.W//2-150,gs.H//2)
             )
             pygame.display.flip()
-            prev_paused = True
             continue
 
-        # if server and prev_paused and not gs.paused:
-        #     prev_paused = False
-        #     game_countdown()
 
         uploc()
         upblnv()
@@ -496,14 +493,6 @@ def game_loop(server=False):
     )
     pygame.display.flip()
 
-    # while True:
-    #     for event in pygame.event.get():
-    #         if event.type == pygame.QUIT:
-    #             break
-    #         if event.type == pygame.KEYDOWN:
-    #             if event.key == pygame.K_ESCAPE:
-    #                 break
-    #     pygame.time.wait(wt)
     print("Game Over")
 
 
