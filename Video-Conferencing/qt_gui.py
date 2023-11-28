@@ -199,7 +199,7 @@ class VideoListWidget(QListWidget):
             if n <= 1:
                 res = "900p"
             elif n <= 4:
-                res = "480p"
+                res = "560p"
             elif n <= 6:
                 res = "360p"
             else:
@@ -345,13 +345,23 @@ class LoginDialog(QDialog):
         self.name_edit = QLineEdit(self)
         self.layout.addWidget(self.name_edit, 0, 1)
 
+        self.password_label = QLabel("Password", self)
+        self.layout.addWidget(self.password_label, 1, 0)
+
+        self.password_edit = QLineEdit(self)
+        self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.layout.addWidget(self.password_edit, 1, 1)
+
         self.button = QPushButton("Login", self)
-        self.layout.addWidget(self.button, 1, 1)
+        self.layout.addWidget(self.button, 2, 1)
 
         self.button.clicked.connect(self.login)
     
     def get_name(self):
         return self.name_edit.text()
+    
+    def get_password(self):
+        return self.password_edit.text()
     
     def login(self):
         if self.get_name() == "":
@@ -359,6 +369,12 @@ class LoginDialog(QDialog):
             return
         if " " in self.get_name():
             QMessageBox.critical(self, "Error", "Username cannot contain spaces")
+            return
+        if "@iiitdm.ac.in" not in self.get_name():
+            QMessageBox.critical(self, "Error", "Only people from IIITDM can connect")
+            return
+        if self.get_password() != PASSWORD:
+            QMessageBox.critical(self, "Error", "Incorrect Password")
             return
         self.accept()
     

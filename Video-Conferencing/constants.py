@@ -26,6 +26,7 @@ AUDIO = 'Audio'
 TEXT = 'Text'
 FILE = 'File'
 
+PASSWORD = '303'
 MEDIA_SIZE = {VIDEO: 25000, AUDIO: 4500}
 
 
